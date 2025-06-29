@@ -24,7 +24,7 @@ struct HomeView: View {
                         fileName: "Connection", // Looks for Connection.lottie in the app bundle
                         config: AnimationConfig(
                             autoplay: true,
-                            loop: true // Set loop to true
+                            loop: true, // Set loop to true
                             speed: 0.5 // Set speed to half
                         )
                     )
