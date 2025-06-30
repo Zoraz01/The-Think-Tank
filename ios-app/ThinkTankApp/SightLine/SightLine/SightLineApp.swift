@@ -1,10 +1,3 @@
-//
-//  SightLineApp.swift
-//  SightLine
-//
-//  Created by Zoraz  on 6/20/25.
-//
-
 import SwiftUI
 import SwiftData
 

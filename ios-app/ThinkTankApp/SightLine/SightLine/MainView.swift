@@ -1,15 +1,6 @@
-//
-//  MainView.swift
-//  SightLine
-//
-//  Created by Zoraz  on 6/20/25.
-//
-
-// MainView.swift
-// MainView.swift
 import SwiftUI
 
-/// Main targeting interface - placeholder
+
 struct MainView: View {
     var body: some View {
         ZStack {

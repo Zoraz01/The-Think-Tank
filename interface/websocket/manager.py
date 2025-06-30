@@ -1,5 +1,3 @@
-# In interface/websocket/manager.py
-
 from fastapi import WebSocket
 from typing import List
 import asyncio
