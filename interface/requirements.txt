@@ -1,0 +1,11 @@
+# --- Core Web Framework & Server ---
+fastapi
+uvicorn[standard]
+
+# --- Vision & AI ---
+ultralytics
+opencv-python
+numpy
+
+# --- Hardware Communication ---
+pyserial
