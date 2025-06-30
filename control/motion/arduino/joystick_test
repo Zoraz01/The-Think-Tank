@@ -1,0 +1,128 @@
+/*
+ * =================================================================
+ * Arduino Joystick to I2C Motor Controller (UPDATED)
+ * =================================================================
+ * * Purpose:
+ * This sketch directly controls the Hiwonder I2C motor controller using
+ * a standard analog joystick. It reads the joystick's X and Y axes
+ * and translates them into tank-style drive commands for the robot.
+ *
+ * This version has been updated with the correct I2C address (0x34)
+ * that we found using the I2C Scanner.
+ *
+ * * Wiring:
+ * This code is designed for the full wiring diagram that includes
+ * the Arduino, Joystick, Breadboard, and I2C Motor Controller.
+ *
+ */
+
+#include <Wire.h> // Include the official Arduino library for I2C
+
+// =================== PIN DEFINITIONS ===================
+// Joystick Pins
+#define JOY_X_PIN   A0  // Joystick X-axis (for turning)
+#define JOY_Y_PIN   A1  // Joystick Y-axis (for forward/backward)
+#define JOY_SW_PIN  2   // Joystick Switch (currently unused, but defined)
+
+// =================== I2C DEVICE & REGISTER DEFINITIONS ===================
+// The I2C address for your specific motor controller.
+#define CONTROLLER_I2C_ADDRESS  0x34
+
+// !!! IMPORTANT: These register values are still placeholders!
+// You will need to find the correct values from the Hiwonder manual
+// for the motors to work correctly.
+#define REG_MOTOR1_SPEED        0x01   // Register to set speed for motor 1 (Left)
+#define REG_MOTOR1_DIR          0x02   // Register to set direction for motor 1 (Left)
+#define REG_MOTOR2_SPEED        0x03   // Register to set speed for motor 2 (Right)
+#define REG_MOTOR2_DIR          0x04   // Register to set direction for motor 2 (Right)
+
+// =================== SETUP ===================
+void setup() {
+  Wire.begin();       // Initialize I2C bus
+  Serial.begin(9600); // Initialize Serial for debugging output
+
+  // Set the joystick switch pin as an input with an internal pull-up resistor.
+  pinMode(JOY_SW_PIN, INPUT_PULLUP);
+
+  Serial.println("Arduino Joystick to I2C Controller Initialized.");
+  Serial.println("I2C Address: 0x34");
+  Serial.println("Move joystick to send commands.");
+}
+
+
+// =================== MAIN LOOP ===================
+void loop() {
+  // 1. Read the raw joystick values (0-1023)
+  int joyX = analogRead(JOY_X_PIN);
+  int joyY = analogRead(JOY_Y_PIN);
+
+  // 2. Convert joystick values to a motor-friendly range (-255 to 255)
+  int forwardSpeed = map(joyY, 0, 1023, -255, 255);
+  int turnSpeed    = map(joyX, 0, 1023, -255, 255);
+  
+  // Add a "deadzone" to prevent drift when the joystick is centered
+  if (abs(forwardSpeed) < 20) {
+    forwardSpeed = 0;
+  }
+  if (abs(turnSpeed) < 20) {
+    turnSpeed = 0;
+  }
+  
+  // 3. Mix the forward and turn speeds to get final motor speeds for tank drive
+  int leftMotorSpeed  = forwardSpeed + turnSpeed;
+  int rightMotorSpeed = forwardSpeed - turnSpeed;
+
+  // 4. Constrain the speeds to the maximum possible range
+  leftMotorSpeed  = constrain(leftMotorSpeed, -255, 255);
+  rightMotorSpeed = constrain(rightMotorSpeed, -255, 255);
+
+  // 5. Send the final commands to the motor controller
+  setMotorSpeed(1, leftMotorSpeed);  // Motor 1 is Left
+  setMotorSpeed(2, rightMotorSpeed); // Motor 2 is Right
+
+  // 6. Print the calculated speeds to the Serial Monitor for debugging
+   Serial.print("Left: ");
+   Serial.print(leftMotorSpeed);
+   Serial.print(" | Right: ");
+   Serial.println(rightMotorSpeed);
+  
+  delay(50); // A small delay to keep the I2C bus from being flooded
+}
+
+
+// =================== I2C HELPER FUNCTION ===================
+
+/**
+ * @brief Sets the speed and direction of a single motor via I2C.
+ * @param motorNum The motor to control (1 for left, 2 for right).
+ * @param speed The desired speed, from -255 to 255.
+ */
+void setMotorSpeed(int motorNum, int speed) {
+  // This function assumes the controller has separate registers for speed and direction.
+  // This logic might need to be changed based on your controller's manual.
+  
+  byte direction = (speed >= 0) ? 1 : 0; // Example: 1 for forward, 0 for reverse
+  byte speedPWM = abs(speed);
+
+  byte regSpeed, regDir;
+
+  if (motorNum == 1) {
+    regSpeed = REG_MOTOR1_SPEED;
+    regDir = REG_MOTOR1_DIR;
+  } else {
+    regSpeed = REG_MOTOR2_SPEED;
+    regDir = REG_MOTOR2_DIR;
+  }
+
+  // Send direction command
+  Wire.beginTransmission(CONTROLLER_I2C_ADDRESS);
+  Wire.write(regDir);
+  Wire.write(direction);
+  Wire.endTransmission();
+
+  // Send speed command
+  Wire.beginTransmission(CONTROLLER_I2C_ADDRESS);
+  Wire.write(regSpeed);
+  Wire.write(speedPWM);
+  Wire.endTransmission();
+}
